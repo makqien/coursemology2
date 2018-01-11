@@ -63,5 +63,3 @@ script:
 after_script:
   - 'if [ "$GROUP" = "misc" ]; then bash <(curl -s https://codecov.io/bash) -F frontend -s client/coverage; fi'
 
-notifications:
-  slack: coursemology:kdSjdF4xtXGOBIvMsbIF4gQ6
