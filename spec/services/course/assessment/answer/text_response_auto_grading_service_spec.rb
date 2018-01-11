@@ -19,7 +19,7 @@ RSpec.describe Course::Assessment::Answer::TextResponseAutoGradingService do
       create(:course_assessment_answer_auto_grading, answer: answer)
     end
 
-    describe '#grade' do
+    describe '#grade text response question' do
       before { allow(answer.submission.assessment).to receive(:autograded?).and_return(true) }
 
       context 'when an exact match is present' do
@@ -95,6 +95,67 @@ RSpec.describe Course::Assessment::Answer::TextResponseAutoGradingService do
           subject.grade(answer)
           expect(answer.grade).to eq(0)
           expect(grading.result['messages']).to be_empty
+        end
+      end
+    end
+
+    describe '#grade comprehension question' do
+      before { allow(answer.submission.assessment).to receive(:autograded?).and_return(true) }
+
+      context 'when answer only contains lifted words' do
+        let(:question_traits) { :comprehension_question }
+        let(:answer_traits) { :comprehension_lifted_word }
+
+        it 'matches lifted word and grades as zero' do
+          subject.grade(answer)
+          expect(answer.grade).to eq(0)
+        end
+      end
+
+      context 'when answer contains only keywords' do
+        let(:question_traits) { :comprehension_question }
+        let(:answer_traits) { :comprehension_keyword }
+
+        it 'matches keyword' do
+          subject.grade(answer)
+          expect(answer.grade).to eq(2)
+        end
+      end
+
+      context 'when answer contains lifted words and keywords from same point' do
+        let(:question_traits) { :comprehension_question }
+        let(:answer_traits) { :comprehension_lifted_word_keyword }
+
+        it 'matches lifted word and grades as zero' do
+          subject.grade(answer)
+          expect(answer.grade).to eq(0)
+        end
+      end
+
+      context 'when answer contains keywords from multiple groups' do
+        let(:question_traits) { :multiple_comprehension_groups }
+
+        it 'matches keywords' do
+          question.maximum_grade = 4
+          answer.actable.answer_text = 'keyword keyword'
+          subject.grade(answer)
+          expect(answer.grade).to eq(4)
+        end
+
+        it 'matches keywords with cap on question maximum_grade' do
+          answer.actable.answer_text = 'keyword keyword'
+          subject.grade(answer)
+          expect(answer.grade).to eq(2)
+        end
+      end
+
+      context 'when answer contains lifted words and keywords from multiple groups' do
+        let(:question_traits) { :multiple_comprehension_groups }
+
+        it 'matches lifted word and grades partial marks' do
+          answer.actable.answer_text = 'lifted keyword keyword'
+          subject.grade(answer)
+          expect(answer.grade).to eq(2)
         end
       end
     end
