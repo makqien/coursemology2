@@ -223,3 +223,6 @@ gem 'activerecord-import', '>= 0.2.0'
 
 gem 'record_tag_helper'
 gem 'rails-controller-testing'
+
+# WordNet corpus to obtain lemma form of words, for comprehension questions.
+gem "rwordnet", github: 'makqien/rwordnet'

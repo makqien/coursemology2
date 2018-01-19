@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'rwordnet'
 class Course::Assessment::Question::TextResponseComprehensionSolution < ApplicationRecord
   self.table_name = 'course_assessment_question_text_response_compre_solutions'
 
@@ -6,6 +7,7 @@ class Course::Assessment::Question::TextResponseComprehensionSolution < Applicat
 
   before_validation :remove_blank_solution,
                     :strip_whitespace_solution,
+                    :convert_solution_to_lemma
                     :strip_whitespace_solution_lemma
 
   belongs_to :point, class_name: Course::Assessment::Question::TextResponseComprehensionPoint.name,
@@ -31,6 +33,11 @@ class Course::Assessment::Question::TextResponseComprehensionSolution < Applicat
 
   def strip_whitespace_solution
     solution.each(&:strip!)
+  end
+
+  def convert_solution_to_lemma
+    solution_lemma.clear
+    solution.each { |s| solution_lemma.push(WordNet::Synset.morphy_all(s).first || s) }
   end
 
   def strip_whitespace_solution_lemma
