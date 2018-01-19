@@ -39,6 +39,22 @@ const translations = defineMessages({
     id: 'course.assessment.submission.answer.grade',
     defaultMessage: 'Grade',
   },
+  group: {
+    id: 'course.assessment.submission.answer.group',
+    defaultMessage: 'Group',
+  },
+  point: {
+    id: 'course.assessment.submission.answer.point',
+    defaultMessage: 'Point',
+  },
+  maximumGroupGrade: {
+    id: 'course.assessment.submission.answer.maximumGroupGrade',
+    defaultMessage: 'Maximum Grade for this Group',
+  },
+  pointGrade: {
+    id: 'course.assessment.submission.answer.pointpGrade',
+    defaultMessage: 'Grade for this Point',
+  },
 });
 
 export default class Answers extends Component {
@@ -123,6 +139,75 @@ export default class Answers extends Component {
     /* eslint-enable react/no-array-index-key */
   }
 
+  static renderTextResponseComprehensionPoint(point) {
+    /* eslint-disable react/no-array-index-key */
+    return (
+      <div>
+        <br />
+        <h6><FormattedMessage {...translations.point} /></h6>
+        <Table selectable={false}>
+          <TableBody displayRowCheckbox={false}>
+            <TableRow>
+              <TableRowColumn><FormattedMessage {...translations.pointGrade} /></TableRowColumn>
+              <TableRowColumn>{point.pointGrade}</TableRowColumn>
+            </TableRow>
+            <TableRow>
+              <TableHeaderColumn><FormattedMessage {...translations.type} /></TableHeaderColumn>
+              <TableHeaderColumn><FormattedMessage {...translations.solution} /></TableHeaderColumn>
+            </TableRow>
+            {point.solutions.map((solution, index) => (
+              <TableRow>
+                <TableRowColumn>{solution.solutionType}</TableRowColumn>
+                <TableRowColumn style={{ whiteSpace: 'pre-wrap' }}>{solution.solution}</TableRowColumn>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+    /* eslint-enable react/no-array-index-key */
+  }
+
+  static renderTextResponseComprehensionGroup(group) {
+    /* eslint-disable react/no-array-index-key */
+    return (
+      <div>
+        <br />
+        <h5><FormattedMessage {...translations.group} /></h5>
+        <Table selectable={false}>
+          <TableBody displayRowCheckbox={false}>
+            <TableRow>
+              <TableRowColumn><FormattedMessage {...translations.maximumGroupGrade} /></TableRowColumn>
+              <TableRowColumn>{group.maximumGroupGrade}</TableRowColumn>
+            </TableRow>
+            {group.points.map((point, index) => (
+              <TableRow>
+                <TableRowColumn colSpan={2}>
+                  {Answers.renderTextResponseComprehensionPoint(point)}
+                </TableRowColumn>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+    /* eslint-enable react/no-array-index-key */
+  }
+
+  static renderTextResponseComprehension(question) {
+    /* eslint-disable react/no-array-index-key */
+    return (
+      <div>
+        <hr />
+        <h4><FormattedMessage {...translations.solutions} /></h4>
+        {question.groups.map((group, index) => (
+          Answers.renderTextResponseComprehensionGroup(group)
+        ))}
+      </div>
+    );
+    /* eslint-enable react/no-array-index-key */
+  }
+
   static renderTextResponse(question, readOnly, answerId, graderView) {
     const allowUpload = question.allowAttachment;
 
@@ -146,10 +231,14 @@ export default class Answers extends Component {
 
     const editableAnswer = question.autogradable ? plaintextAnswer : richtextAnswer;
 
+    const solutionsTable = question.comprehension ?
+                           (question.groups ? Answers.renderTextResponseComprehension(question) : null) :
+                           (question.solutions ? Answers.renderTextResponseSolutions(question) : null);
+
     return (
       <div>
         { readOnly ? readOnlyAnswer : editableAnswer }
-        {question.solutions && graderView ? Answers.renderTextResponseSolutions(question) : null}
+        { graderView ? solutionsTable : null }
         {allowUpload ? <UploadedFileView questionId={question.id} /> : null}
         {allowUpload && !readOnly ? Answers.renderFileUploader(question, readOnly, answerId) : null}
       </div>
