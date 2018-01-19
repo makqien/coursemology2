@@ -11,6 +11,10 @@ class Course::Assessment::Question::TextResponsesController < Course::Assessment
       @text_response_question.hide_text = true
       @text_response_question.allow_attachment = true
     end
+    if params[:comprehension] == 'true'
+      @text_response_question.is_comprehension = true
+      build_at_least_one_group_one_point
+    end
   end
 
   def create
@@ -24,9 +28,16 @@ class Course::Assessment::Question::TextResponsesController < Course::Assessment
 
   def edit
     @question_assessment = load_question_assessment_for(@text_response_question)
+    build_at_least_one_group_one_point if @text_response_question.comprehension_question?
   end
 
   def update
+    @text_response_question.groups.map do |group|
+      group.points.map do |point|
+        point.solutions.map(&:solution_will_change!)
+      end
+    end
+
     if @text_response_question.update_attributes(text_response_question_params)
       redirect_to course_assessment_path(current_course, @assessment),
                   success: t('.success', name: question_type)
@@ -52,13 +63,30 @@ class Course::Assessment::Question::TextResponsesController < Course::Assessment
   def text_response_question_params
     params.require(:question_text_response).permit(
       :title, :description, :staff_only_comments, :maximum_grade, :allow_attachment,
-      :hide_text,
+      :hide_text, :is_comprehension,
       skill_ids: [],
-      solutions_attributes: [:_destroy, :id, :solution_type, :solution, :grade, :explanation]
+      solutions_attributes: [:_destroy, :id, :solution_type, :solution, :grade, :explanation],
+      groups_attributes:
+      [
+        :_destroy, :id, :maximum_group_grade,
+        points_attributes:
+        [
+          :_destroy, :id, :point_grade,
+          solutions_attributes:
+          [
+            :_destroy, :id, :solution_type, :explanation, solution: []
+          ]
+        ]
+      ]
     )
   end
 
   def question_type
     @text_response_question.question_type
+  end
+
+  def build_at_least_one_group_one_point
+    @text_response_question.groups.build if @text_response_question.groups.empty?
+    @text_response_question.groups.first.points.build if @text_response_question.groups.first.points.empty?
   end
 end
